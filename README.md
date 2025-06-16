@@ -2,7 +2,7 @@
 
 This guide is a somewhat extended version of a Dataharvest 2025 presentation on how to work with satellite imagery and raster data in R. In particular, it will walk you through navigating and downloading *free* satellite imagery from the [USGS EarthExplorer](https://earthexplorer.usgs.gov/) portal, as well as how to combine that with vector data in R to investigate which neighborhoods in Hamburg are most effected by heat in the summer.
 
-The suggested order of this guide is to start with the [presentation](1_presentation.pdf), which gives a quick overview of the different ways to measure heat and how satellites can actually capture information like temperature. The [EarthExplorer quick-start guide](2_earthexplorer_quickstart.md) will guide you through finding the right images to download. If you just want to look at the code, you can jump straight to the [R script](3_landst_lst_demo.Rmd).
+The suggested order of this guide is to start with the [presentation](1_presentation.pdf), which gives a quick overview of the different ways to measure heat and how satellites can actually capture information like temperature. The [EarthExplorer quick-start guide](2_earthexplorer_quickstart.md) will guide you through finding the right images to download. Then, you can learn how to analyse the images in R by working directly with the [R markdown file](3_landst_lst_demo.Rmd) in RStudio (or other code editor of your choice) or following along [in-browser](3_landsat_lst_demo.md).
 
 While this is just one example, this guide can be extended to many types of geospatial analysis (flood, drought, land classification) or products from other satellite missions (Sentinel or other private providers).
 
