@@ -19,10 +19,10 @@ landsat = rast('data/LC09_L2SP_196023_20240501_20240502_02_T1_ST_B10.TIF')
 plot(landsat)
 ```
 
-Now we can also load vector data for hamburg, in this case a GeoJSON file. What's great about `terra` is that the file type of vector data doesn't really matter - it can handle it all.
+Now we can also load the vector data for Hamburg which contains the geographical boundaries for each of the city's districts. We can do this by directly calling an API endpoint from Hamburg's (Office for Geoinformation and Surveying)[https://www.hamburg.de/politik-und-verwaltung/behoerden/behoerde-fuer-stadtentwicklung-und-wohnen/aemter-und-landesbetrieb/landesbetrieb-geoinformation-und-vermessung]. In this example, the vector data we're working with is in GeoJSON format. However, the `vect` function in `terra` can also handle other vector data formats, such as Shapefiles.
 
 ```{r}
-hamburg = vect('data/hamburg.geojson')
+hamburg = vect('https://api.hamburg.de/datasets/v1/verwaltungsgrenzen/collections/stadtteile/items?limit=104&f=json')
 plot(hamburg)
 ```
 
@@ -55,9 +55,11 @@ spatial raster or vector data the same way we would with a dataframe.
 ```{r}
 library(tidyterra)
 
-hamburg %>%
-  filter(bezirk_name=="Altona") %>%
-  plot()
+# let's filter out the islands of hamburg so we can only focus on the city
+hamburg = hamburg %>%
+  filter(!(stadtteil_name %in% c("Neuwerk", "Nigehörn", "Scharhörn")))
+
+plot(hamburg)
 ```
 
 ## Dealing with projections
@@ -312,33 +314,32 @@ Wow, the neighborhood Billbrook was nearly 6 degrees Celsius hotter than Hamburg
 The best way to standardize a workflow is by writing some functions. So I've gone ahead and written a function that will do exactly what we just did with one line of code. The only input is the file path.
 
 ```{r}
-get_relative_lst = function(raster_file, vector_file) {
-  
+get_relative_lst = function(fpath, vector) {
+
   # load files
-  raster = rast(raster_file)
-  vector = vect(vector_file)
-  
+  raster = rast(fpath)
+
   # reproject if necessary
   if (!same.crs(raster, vector)) {
     new_crs = crs(raster)
     vector = project(vector, new_crs)
   }
-  
+
   # crop and mask
   raster = crop(raster, vector, mask=TRUE)
-  
+
   # convert from DN to celsius (or whatever other calculation you might need to do)
   raster = (raster * 0.00341802) + 149.0 - 273.15
-  
+
   # calculate zonal statistics
   mean_lst = extract(raster, vector, fun=mean, ID=FALSE)
-  
+
   # calculate global statistics
   global_mean = global(raster, fun=mean, na.rm=TRUE)$mean
-  
+
   # calculate relative values
   relative_lst = mean_lst - global_mean
-  
+
   # and return
   return(relative_lst)
 }
@@ -356,7 +357,7 @@ landsat_list
 Then we can apply our function to each of the file paths in this list.
 
 ```{r}
-relative_lst_list = lapply(landsat_list, get_relative_lst, "data/hamburg.geojson")
+relative_lst_list = lapply(landsat_list, get_relative_lst, vector=hamburg)
 ```
 
 Since this returns a list of data frames, we can merge all the columns together to make it a bit easier to work with.
