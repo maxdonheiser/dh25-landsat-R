@@ -14,3 +14,12 @@ If you spot any errors or want to see more examples, please reach out!
 |----|------|
 |[LC08_L2SP_195023_20240502_20240511_02_T1_ST_B10.TIF](data/LC08_L2SP_195023_20240502_20240511_02_T1_ST_B10.TIF)|Earth Resources Observation and Science (EROS) Center. (2020). Landsat 8-9 Operational Land Imager / Thermal Infrared Sensor Level-2, Collection 2 \[dataset]. U.S. Geological Survey. [https://doi.org/10.5066/P9OGBGM6](https://doi.org/10.5066/P9OGBGM6).|
 |[LC09_L2SP_196023_20240501_20240502_02_T1_ST_B10.TIF](data/LC09_L2SP_196023_20240501_20240502_02_T1_ST_B10.TIF)|Earth Resources Observation and Science (EROS) Center. (2020). Landsat 8-9 Operational Land Imager / Thermal Infrared Sensor Level-2, Collection 2 \[dataset]. U.S. Geological Survey. [https://doi.org/10.5066/P9OGBGM6](https://doi.org/10.5066/P9OGBGM6).|
+
+## Other resources
+
+- [Landsat Collection 2 Surface Temperature](https://www.epa.gov/heatislands/measuring-heat-islands)
+- [Which measurement is more accurate: taking Earthʼs surface temperature from the ground or from space?](https://science.nasa.gov/climate-change/faq/which-measurement-is-more-accurate-taking-earths-surface-temperature-from-the-ground-or-from-space/)
+- [How we measure temperature and why it matters](https://climate.copernicus.eu/how-we-measure-temperature-and-why-it-matters)
+- [Measuring Heat Islands](https://www.epa.gov/heatislands/measuring-heat-islands)
+- [Mapping Urban Heat Islands Leads NYC Council Data Team to Landsat](https://www.usgs.gov/news/mapping-urban-heat-islands-leads-nyc-council-data-team-landsat)
+- [Landsat Collection 2 Data Dictionary](https://www.usgs.gov/centers/eros/science/landsat-collection-2-data-dictionary)
