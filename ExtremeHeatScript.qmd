@@ -1,27 +1,23 @@
 ---
-title: "Satellite Imagery and Extreme Heat"
+title: "Exploring Extreme Heat: Satellite imagery and spatial analysis in R"
 author: "Max Donheiser"
 format: html
 editor: visual
 ---
 
-## Satellite Imagery and Extreme Heat
+In this tutorial, you will use Landsat satellite imagery to analyse heat islands in Hamburg (or the city of your choice).
+
+## Getting started with `terra`
 
 First let's load the packages we need:
 
 ```{r}
-
 library(dplyr) # for manipulating data
 library(ggplot2) # for visualization
 library(terra) # for working with raster and vector data
 ```
 
-```{undefined}
-#| echo: true
-
-```
-
-Now we need some data. Conveniently, the `terra` package in R has great naming conventions for loading data. It’s also really easy to plot geodata to preview how it looks. Let’s start with a landsat image.
+Now we need some data. Using the `terra` package, we can load our raster image from Landsat and preview it.
 
 ```{r}
 #| echo: true
@@ -30,7 +26,7 @@ landsat <- rast('data/LC09_L2SP_196023_20240501_20240502_02_T1_ST_B10.TIF')
 plot(landsat)
 ```
 
-Now we can also load the vector data for Hamburg which contains the geographical boundaries for each of the city’s districts. We can do this by directly calling an API endpoint from Hamburg’s (Office for Geoinformation and Surveying)\[<https://www.hamburg.de/politik-und-verwaltung/behoerden/behoerde-fuer-stadtentwicklung-und-wohnen/aemter-und-landesbetrieb/landesbetrieb-geoinformation-und-vermessung>\]. In this example, the vector data we’re working with is in GeoJSON format. However, the `vect` function in `terra` can also handle other vector data formats, such as Shapefiles.
+Looks like land! But we need to find Hamburg in the image. In order to do this, let's load vector data for each of Hamburg's districts. We can do this by directly calling an API endpoint from Hamburg’s (Office for Geoinformation and Surveying)\[<https://www.hamburg.de/politik-und-verwaltung/behoerden/behoerde-fuer-stadtentwicklung-und-wohnen/aemter-und-landesbetrieb/landesbetrieb-geoinformation-und-vermessung>\] (the `terra` package accepts both files and URLs as data sources). In this example, the vector data we’re working with is a GeoJSON file, but other file formats such as Shapefiles are also accepted.
 
 ```{r}
 hamburg <- vect('https://api.hamburg.de/datasets/v1/verwaltungsgrenzen/collections/stadtteile/items?limit=104&f=json')
@@ -38,9 +34,7 @@ hamburg <- vect('https://api.hamburg.de/datasets/v1/verwaltungsgrenzen/collectio
 plot(hamburg)
 ```
 
-Normally you might want to click on and explore your dataset from the R environment the same way you could with a normal data frame or the `sf` package. But in terra you can't.
-
-But you can preview your data using the standard `head` function, which gives a nice overview of what data you’re working with.
+One downside to `terra` is that you can't open your data in the RStudio view like with an `sf` object. However, you can still preview your data with the standard `head` function.
 
 ```{r}
 #| echo: true
@@ -48,11 +42,9 @@ hamburg |>
   head()
 ```
 
-Here we have information on the city district (`bezirk`) and the neighborhood (`stadtteil`).
+We can see that the file contains information about the district (`bezirk`) and the neighborhood (`stadtteil`).
 
-We can also filter the data, although it functions a bit differently than with normal dataframes.
-
-Let’s try just plotting the neighborhoods in Hamburg’s Altona district.
+If we want to filter the data with native `terra`, the functionality is also a bit different than with standard `dplyr`.
 
 ```{r}
 #| echo: true
@@ -61,14 +53,14 @@ altona <- subset(hamburg, hamburg$bezirk_name=="Altona")
 plot(altona)
 ```
 
-If you wanted to stick to the classic `tidyr` and `dplyr` syntax, then you could use the helpful `tidyterra` package. It allows us to interact with spatial raster or vector data just as we would with a dataframe.
+If you wanted to stick to the classic `tidyr` and `dplyr` syntax, then you can load `tidyterra`.
 
 ```{r}
 #| include: false
 library(tidyterra)
 ```
 
-Let's filter out the islands of Hamburg and focus on the city
+Let's filter out the islands around Hamburg that are not part of the contiguous city.
 
 ```{r}
 #| echo: true
@@ -79,33 +71,27 @@ hamburg <- hamburg |>
 plot(hamburg)
 ```
 
-## **Dealing with projections**
+## Dealing with projections
 
-You may have noticed that the x and y axes for our Landsat image and Hamburg are quite different. That’s because the they are using two different coordinate systems. It also means that if we tried to plot both together, it wouldn’t really work out.
+You may have noticed that the x and y axes for our Landsat image and Hamburg vector data are quite different. That’s because the they are using two different coordinate systems. It also means that if we tried to plot both together, it wouldn't work.
 
-In technical terms, that means the data sets have different coordinate reference systems, also known as CRS. We can check which CRS is being used quite easily:
+We can check which CRS is being used quite easily:
 
 ```{r}
 #| echo: true
-crs(landsat)
+crs(landsat, describe=TRUE)
 
-crs(hamburg)
-
-
+crs(hamburg, describe=TRUE)
 ```
 
-That returns a bunch of information, some of which we don't need.
-
-An easier alternative?
+Here's another way to quickly check whether two geographic datasets have the same coordinate reference system.
 
 ```{r}
 #| echo: true
 same.crs(landsat, hamburg)
 ```
 
-Great, a simple no. In order to fix this, we need to reproject either Hamburg or the Landsat data.
-
-In this case, let's reproject the data for Hamburg since it’s not as detailed as the Landsat data and will go a bit faster.
+If we want to use both datasets together, we need to reproject one of our files. Let's reproject the data for Hamburg since it’s not as detailed as the Landsat data and will go a bit faster.
 
 ```{r}
 new_crs <-  crs(landsat)
@@ -116,20 +102,16 @@ hamburg <-  hamburg |>
 plot(hamburg)
 ```
 
-Wonderful, this seems to be a bit closer to what we want. To double check that everything worked, we can plot the Hamburg districts on top of the raster data.
+Notice that the plot looks the same, but the axes have different values. This is exactly what we want. Now we can plot the Hamburg districts on top of our raster data.
 
 ```{r}
 plot(landsat)
 plot(hamburg, add=TRUE)
 ```
 
-## **Cropping and masking**
+## Cropping and masking
 
-Now, you may have noticed that the Landsat image is way bigger than we need.
-
-We can take two measures to reduce the amount of data we’re working with, and so speed up calculations that we’ll do later.
-
-First we can crop the image. This is the same thing as cropping out that random stranger who happened to be in your holiday vacation photos.
+The Landsat image is way larger than we need. Let's crop it to just the region we're interested in.
 
 ```{r}
 #| echo: true
@@ -138,11 +120,7 @@ plot(landsat)
 plot(hamburg, add=TRUE)
 ```
 
-Great, now we’re focused just on the region of Hamburg.
-
-But we can also take it a step further and mask the Landsat image.
-
-This basically means removing parts of the image that are not within our zone of interest. Think of it as you would a PNG file that has a transparent background in parts of it.
+Great, now we’re focused just on the region of Hamburg. We can also take it a step further and mask the satellite image. That means removing any areas outside of the Hamburg geometry, not just setting a bounding box.
 
 ```{r}
 landsat <- mask(landsat, hamburg)
@@ -150,21 +128,19 @@ plot(landsat)
 plot(hamburg, add=TRUE)
 ```
 
-You can speed things up by calling the `crop` function and setting the variable `mask` to `TRUE`.
+If you want to combine both steps, you could run the function `crop(landsat, hamburg, mask=TRUE)`.
 
-## **Bands and calculations with raster data**
+## Raster bands and calculations
 
-Another thing you may have noticed is that the scale for the Landsat image doesn’t make sense. We’re working with surface temperature, and those numbers surely don’t represent anything close to Celsius or Fahrenheit. That’s because the data is natively in a metric called digital numbers (DN).
+You may have noticed that the scale of our plot does not reflect the temperature in Celsius. The metric being shown is actually something called "digital numbers" or DN. I couldn't really explain to you how Landsat comes to calculate the digital number, but luckily for Landsat provides a simple [scaling formula](https://www.usgs.gov/landsat-missions/landsat-collection-2-level-2-science-products) for converting DN into Kelvins: K = (DN \* 0.00341802) + 149.0. From there, we can convert the data into Celsius.
 
-Unfortunately, I can’t really tell you what this means. Fortunately, Landsat provides us with a nice little [scaling formula](https://www.usgs.gov/landsat-missions/landsat-collection-2-level-2-science-products) to turn these values into Kelvins: K = (DN \* 0.00341802) + 149.0
-
-In raster data work is that, much like mutating an entire column, each pixel will be put through the given formula. Instead of columns, however, we have something called bands. Let’s see what different bands we have.
+Calculations with raster data are pretty similar to working with normal dataframes, except instead of having columns the data has different bands. Landsat GeoTIFF files only contain one band per file, let's see what it is called:
 
 ```{r}
 varnames(landsat)
 ```
 
-Alright, let’s make a new band for the same data in Kelvin.
+Now we can apply the scaling formula.
 
 ```{r}
 landsat$lst_kelvin <-  (landsat$LC09_L2SP_196023_20240501_20240502_02_T1_ST_B10 * 0.00341802) + 149.0
@@ -173,16 +149,16 @@ plot(landsat)
 
 ```
 
-If you prefer, you could also do it the `tidyr` way:
+If you prefer, you could also do it the `tidyr` way:
 
 ```{r}
 #| echo: true
 landsat |>
   mutate(tidyr_kelvin = (LC09_L2SP_196023_20240501_20240502_02_T1_ST_B10 * 0.00341802) + 149.0) |>
-  plot(., "tidyr_kelvin")
+  plot("tidyr_kelvin")
 ```
 
-Now we can see that there are two columns, one of which is closer to what we want. Let’s go ahead and convert the data in Kelvins to Celsius.
+And finally, we can convert the values from Kelvin to Celsius.
 
 ```{r}
 landsat$lst_celsius = landsat$lst_kelvin - 273.15
@@ -190,22 +166,18 @@ plot(landsat, "lst_celsius")
 plot(hamburg, add=TRUE, border='white')
 ```
 
-## **Zonal statistics**
+## Zonal statistics
 
-Our original question was "What was the average surface temperature in each of Hamburg’s neighborhoods on TK date at X time?"
+Now we move on to our analysis. How do we find which neighborhoods in Hamburg are most affected by heat? We have to calculate the mean temperature across all pixels within a neighborhood.
 
-Now that we have our data in Celsius, let’s try to answer that.
-
-And which of these neighborhoods is the most affected by heat?
-
-We can actually calculate that super easily using the `extract` function.
+We can do that super easily using the `extract` function.
 
 ```{r}
 #| echo: true
 extract(landsat$lst_celsius, hamburg, fun=mean)
 ```
 
-The results show us the average temperature for each district. Annoyingly, we don’t get the name of the district, but everything aligns based on the row number. In order to save this data as a new variable in our vector file, we need to return the responses without the ID column.
+The results show us the average temperature for each district. Annoyingly, the ID returned with the results is just the row number of the original Hamburg data. But we can work with this. Let's save the mean surface temperature as a new variable in our hamburg data and plot the results.
 
 ```{r}
 #| echo: true
@@ -223,11 +195,9 @@ Now we can adjust some settings while plotting so that we have a continuous colo
 plot(hamburg, "mean_lst", type="continuous", col=hcl.colors("Reds", n=100, rev=TRUE))
 ```
 
-### **Weighted means**
+### Weighted means
 
-Something to keep in mind when working with raster data is how each pixel is handled. Our data has a resolution of 30m, which isn’t huge, but also not super detailed. That likely means there are a few pixels that land on the border between districts.
-
-Let’s take a look at this with the neighborhood Sternschanze in Altona. (Remember, we already we filtered our data before reprojecting:
+Spatial resolution is an important component when working with raster data. Our data has a resolution of 30m, which isn’t terrible, but also not super detailed. There are likely many pixels that fall on the border between two neighborhoods. Let's investigate this a bit further in the Sternschanze neighborhood of Hamburg.
 
 ```{r}
 #| echo: true
@@ -242,13 +212,11 @@ landsat %>%
 plot(sternschanze, add=TRUE, border="white")
 ```
 
-We can see that there are a lot of pixels that *touch* the border of Sternschanze, but are also partially outside.
+As you can see, the pixels along the geographic border of the neighborhood all fall partially outside. There are a few different ways you can handle this. By default, the `extract` function assigns pixels to the geometry in which their geographic midpoint fall.When working with high-resolution raster data or large geographic regions, this doesn't pose a huge issue.
 
-When calling the `extract` function, it assigns the pixel by default to whichever geometry its center point falls in.
+However, the smaller your regions get or the lower your resolution is, this assignment method can have large impacts on your results: If a region overlaps with 500 raster data points, then losing a few does not make a huge difference. But if it overlaps just 10 raster cells, losing just one can make a big difference.
 
-When the pixel resolution is relatively high compared to the area of geometries, then this will not have a huge effect on your results. But for smaller areas, it could skew them.
-
-In order to understand this better, let’s first calculate the weighted mean - which only considers the approximate portion of a pixel that falls within a geometry.
+An alternative method for evaluating zonal raster statistics is working with the weighted mean. This takes into account the approximate portion of a pixel that falls within a geometry while calculating summary statistics.
 
 ```{r}
 #| echo: true
@@ -257,40 +225,35 @@ hamburg$weighted_mean_lst <- extract(landsat$lst_celsius, hamburg, fun=mean, wei
 plot(hamburg, "weighted_mean_lst", type="continuous", col=hcl.colors("Reds", n=100, rev=TRUE))
 ```
 
-It doesn’t look so different from our first chart, so let’s take a look at the difference between values:
+This doesn't look so different to our original calculation. We can also see that in a histogram.
 
 ```{r}
 #| echo: true
-hamburg$lst_weighted_diff = hamburg$mean_lst - hamburg$weighted_mean_lst
+hamburg$lst_diff_weighted_unweighted = hamburg$mean_lst - hamburg$weighted_mean_lst
 
-hamburg |> ggplot(., aes(lst_weighted_diff)) +
+hamburg |>
+  ggplot(aes(lst_diff_weighted_unweighted)) +
   geom_histogram()
 ```
 
-`(stat_bin()` using `bins = 30`. Pick better value with `binwidth`)
-
-It's a pretty standard distribution and the difference in values is not so huge. That being said, neighborhoods are not all affected equally.
-
-Let’s compare the difference in values to the area of the district. We can do that with the `expanse` function.
+When we look at the difference between the calculations by district size, however, there's a trend. We can do this by first calculated the district size with the `expanse` function (which is also handy!) and then plotting that against the difference between the two methods.
 
 ```{r}
 #| echo: true
 hamburg$area_km <- expanse(hamburg, unit="km")
 
 hamburg |>
-  ggplot(., aes(area_km, lst_weighted_diff)) +
+  ggplot(aes(area_km, lst_diff_weighted_unweighted)) +
   geom_point()
 ```
 
-Now we can see that the calculations for mean surface temperature in smaller districts are much more impacted by whether or not we use the weighted mean.
+The difference between the weighted and unweighted mean LST varies much more for smaller districts. Let's use the weighted mean for our final calculations.
 
-So let’s use the weighted mean for our final calculation.
+## Global statistics
 
-## **Global statistics**
+For this experiment, we're not necessarily interested in the absolute surface temperature. Rather, we're interested in how they compare to each other. That's also known as the *relative* temperature. This is a pretty easy calculation: We just need to calculate the deviation from the mean temperature for all of Hamburg.
 
-Something worth noting is that we’re not necessarily interested in the temperature of each district, but how they compare to each other. What we want is the *relative* temperature. In order to do that, we need to calculate the mean temperature for all of Hamburg.
-
-But we can’t just calculate the mean of the neighborhood means. Some neighborhoods are way larger than others, and that would distort our calculation. So, to calculate the mean value for all of hamburg, we can call the `global` function.
+Since the neighborhoods have differing areas, the fastest way to calculate the mean temperature in Hambug is with the `global` function. This is like `extract`, but instead of zonal statistics, we get the overall - or global - value.
 
 ```{r}
 #| echo: true
@@ -299,7 +262,7 @@ global(landsat, fun=mean, na.rm=TRUE)
 # without na.rm=TRUE, we'll get an error, since the pixels that have been masked out have a value of NA
 ```
 
-In order to calculate relative mean temperature, we subtract the global mean from the neighborhood means (weighted, of course)
+In order to calculate relative mean temperature, we subtract the global mean from the neighborhood means (weighted, of course).
 
 ```{r}
 #| echo: true
@@ -312,7 +275,7 @@ plot(hamburg, "weighted_relative_lst", type="continuous", col=hcl.colors("RdYlBu
 
 Amazing! Beautiful!
 
-Now we can easily see which neighborhoods in Hamburg were hotter on TK date than others. We can also pull up the names.
+Now we can easily see which neighborhoods in Hamburg were hotter than others at the time our satellite image was taken. Let's take a closer look at the data.
 
 ```{r}
 #| echo: true
@@ -322,15 +285,15 @@ hamburg |>
   head(10)
 ```
 
-Wow, the neighborhood Billbrook was nearly 6 degrees Celsius hotter than Hamburg on average (at least, it was at the time this image was taken).
+The Billbrook neighborhood was, on average, nearly 6 degrees Celsius hotter than Hamburg as a whole. It's a major industrial area, which means there's likely a lot of asphault and concrete and relative little green space. But we can also see that Altona-Nord	and Sternschanze, both residential areas, were also quite hot compared to the city as a whole. This is a great starting point for further reporting.
 
 In order to look at trends over time, we need to extend our workflow a little bit.
 
-## **Build a pipeline**
+## Bonus Section: Build a data pipeline
 
 The best way to standardize a workflow is by writing some functions. So I’ve gone ahead and written a function that will do exactly what we just did with one line of code. The only input is the file path.
 
-(If you've never written your own function in R, it's worth knowing that by wrapping a series of instructions in curly braces - {}  - and assigning a name to the function, and saving it, you can save yourself the time and trouble of either rewriting, or more likely, copying and pasting code blocks that you need to use more than once. For more on functions, see this chapter from Hadley Wickham's excellent [R for Data Science](https://r4ds.had.co.nz/index.html))
+(If you've never written your own function in R, it's worth knowing that by wrapping a series of instructions in curly braces - {} - and assigning a name to the function, and saving it, you can save yourself the time and trouble of either rewriting, or more likely, copying and pasting code blocks that you need to use more than once. For more on functions, see this chapter from Hadley Wickham's excellent [R for Data Science](https://r4ds.had.co.nz/index.html))
 
 ```{r}
 #| echo: true
@@ -404,8 +367,8 @@ hamburg$mean_relative_lst = rowMeans(relative_lst_df)
 plot(hamburg, "mean_relative_lst", type="continuous", col=hcl.colors("RdYlBu", n=100, rev=TRUE))
 ```
 
-## Challenge: do the same for another city
+## Challenge: Do the same for another city
 
--   download a tiff file of the area you're interested in
-
--   adapt the relevant code blocks from this script to see the results in another part of the world
+-   Download a tiff file of the area you're interested in
+-   Download a geographic boundaries (neighborhoods, etc.)
+-   Adapt the relevant code blocks from this script to see the results in another part of the world
