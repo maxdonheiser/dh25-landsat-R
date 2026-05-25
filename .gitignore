@@ -1,7 +1,11 @@
+landsat-l2c2-brussels-2025/
+sentinel3-slstr-belgium-2025/
+3_extreme_heat_analysis_files/*
+3_extreme_heat_analysis.html
+*.pptx
+.DS_Store
 .Rhistory
 .Rproj.user/
-3_landsat_lst_demo_files/*
-ExtremeHeatScript_files/*
-.DS_Store
-*.pptx
-*.zip
+.positai
+
+
