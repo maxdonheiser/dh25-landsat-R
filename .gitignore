@@ -4,6 +4,15 @@
 .DS_Store
 .Rhistory
 .Rproj.user/
+<<<<<<< Updated upstream
 .positai
 
 
+=======
+3_landsat_lst_demo_files/*
+ExtremeHeatScript_files/*
+.DS_Store
+*.pptx
+*.zip
+.positai
+>>>>>>> Stashed changes
