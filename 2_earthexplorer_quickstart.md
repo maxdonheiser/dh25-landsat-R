@@ -8,23 +8,24 @@ Important note: While you can use EarthExplorer in every browser, the download f
 
 The first step in finding satellite imagery to work with is locating and annotating your area of interest. Since EarthExplorer doesn't offer labelled base maps outside of the US, this can be a bit tedious. There are two possibilities to quickly zoom to a region: The **Geocoder** function let's you type in a feature name, such as a city or neighborhood name, as well as choose other properties like the country or feature class. Once you select your area from the results, a pin will get added to the map. Then, you can click on the map to add points and further outline your area. You don't need to do this to a high degree of detail, a rough outline of your region is okay.
 
-<img src="screenshots/earthexplorer-geocoder.png" alt="A screenshot of the USGS EarthExplorer portal, cropped to the Geocoder filter function, which uses the filters 'feature name', 'country', and 'feature class' to locate the German city of Hamburg on a map." height="400px">
 <img src="screenshots/earthexplorer-geocoder-pin.png" alt="A screenshot of the USGS EarthExplorer portal showing a map pin locating the German city of Hamburg. The background of the map is satellite imagery." height="200px">
 <img src="screenshots/earthexplorer-geocoder-pin-border.png" alt="A screenshot of the USGS EarthExplorer portal showing multiple map pins that make up a border around the German city of Hamburg. The background of the map is satellite imagery." height="200px">
 
-Alternatively, you can use the **KML/Shapefile Upload** to do exactly that - upload the geometry of a region of interest and automatically select it. You can also manually enter coordinates to zoom to specific points in the **Polygon** section.
+Alternatively, you can use the **KML/Shapefile Upload** to do exactly that - upload the geometry of a region of interest and automatically select it. You can also manually enter coordinates to zoom to specific points in the **Polygon** section. Just be aware that files with too much detail/are too large cannot be uploaded.
 
-## Choosing a date range
+## Choosing a date range and dealing with clouds
 
 There are two ways to filter your results to a specific date range. You can either search for images in between two dates, or you can search for specific months across years. The latter is particularly helpful if you're interested in analysing seasonal data over a period of years. You can also use both filters to, for example, look at images taken in August between 2019 and 2024.
 
-## Dealing with clouds
-
 When using satellite imagery to analyse land surface temperature (LST), clouds can pose a big issue, especially in rainy regions. In EarthExplorer, you can filter your results for cloud cover range from 0% to 100%. In my own experience, filtering cloud coverage to between 20 and 50 percent is a good starting point. The rest comes down to manual inspection of the possible images. This is because the cloud coverage filter refers to an entire satellite image, which is often much larger than the area of interest. As long as there are no clouds above the city, neighborhood, etc. that you're interested in, you're good to go!
+
+<img src="screenshots/earthexplorer-search-filter.png" height="400px">
 
 ## Choosing your data set
 
 For this example, we're working with Landsat Collection 2 Level 2 data. You can find this by first navigating to the **Data Sets** tab, then clicking: Landsat -> Landsat Collection 2 Level 2 -> Landsat 8-9 OLI/TIRS C2 L2.
+
+<img src="screenshots/earthexplorer-dataset.png" height="400px">
 
 ## Browsing the results
 
